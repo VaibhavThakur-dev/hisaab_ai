@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -25,11 +25,15 @@ interface Props {
   open: boolean
   onClose: () => void
   onAdd: (expense: Expense) => void
+  onEdit?: (expense: Expense) => void
+  initialExpense?: Expense
 }
 
-export default function AddExpenseSheet({ open, onClose, onAdd }: Props) {
+export default function AddExpenseSheet({ open, onClose, onAdd, onEdit, initialExpense }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const isEditing = !!initialExpense
 
   const { register, handleSubmit, setValue, watch, reset, formState: { errors } } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -39,26 +43,58 @@ export default function AddExpenseSheet({ open, onClose, onAdd }: Props) {
     },
   })
 
+  useEffect(() => {
+    if (initialExpense) {
+      setValue('amount', String(initialExpense.amount / 100))
+      setValue('category', initialExpense.category)
+      setValue('description', initialExpense.description)
+      setValue('date', new Date(initialExpense.date).toISOString().slice(0, 10))
+    } else {
+      reset({
+        date: new Date().toISOString().slice(0, 10),
+        category: 'other',
+        amount: '',
+        description: '',
+      })
+    }
+  }, [initialExpense, open, setValue, reset])
+
   const category = watch('category')
 
   const onSubmit = async (data: FormValues) => {
     setLoading(true)
     setError(null)
     try {
-      const res = await fetch('/api/expenses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          amount: Number(data.amount),
-          category: data.category,
-          description: data.description,
-          date: data.date,
-        }),
-      })
-      const json = await res.json() as { data?: Expense; error?: string }
-      if (!res.ok) throw new Error(json.error ?? 'Failed')
-      onAdd(json.data!)
-      reset()
+      if (isEditing) {
+        const res = await fetch(`/api/expenses/${initialExpense._id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: Number(data.amount),
+            category: data.category,
+            description: data.description,
+            date: data.date,
+          }),
+        })
+        const json = await res.json() as { data?: Expense; error?: string }
+        if (!res.ok) throw new Error(json.error ?? 'Failed')
+        onEdit?.(json.data!)
+      } else {
+        const res = await fetch('/api/expenses', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            amount: Number(data.amount),
+            category: data.category,
+            description: data.description,
+            date: data.date,
+          }),
+        })
+        const json = await res.json() as { data?: Expense; error?: string }
+        if (!res.ok) throw new Error(json.error ?? 'Failed')
+        onAdd(json.data!)
+        reset()
+      }
       onClose()
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Something went wrong')
@@ -71,7 +107,7 @@ export default function AddExpenseSheet({ open, onClose, onAdd }: Props) {
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="bottom" className="rounded-t-3xl px-5 pb-8">
         <SheetHeader className="mb-5">
-          <SheetTitle>Add Expense</SheetTitle>
+          <SheetTitle>{isEditing ? 'Edit Expense' : 'Add Expense'}</SheetTitle>
         </SheetHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
@@ -122,7 +158,7 @@ export default function AddExpenseSheet({ open, onClose, onAdd }: Props) {
           {error && <p className="text-sm text-destructive">{error}</p>}
 
           <Button type="submit" className="w-full bg-primary text-primary-foreground" disabled={loading}>
-            {loading ? 'Adding...' : 'Add Expense'}
+            {loading ? (isEditing ? 'Saving...' : 'Adding...') : (isEditing ? 'Save Changes' : 'Add Expense')}
           </Button>
         </form>
       </SheetContent>

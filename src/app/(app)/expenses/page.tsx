@@ -12,8 +12,9 @@ import useExpenseStore from '@/stores/useExpenseStore'
 import type { Category, Expense } from '@/types'
 
 export default function ExpensesPage() {
-  const { expenses, filters, setExpenses, removeExpense, setFilters, isLoading, setLoading } = useExpenseStore()
+  const { expenses, filters, setExpenses, removeExpense, updateExpense, setFilters, isLoading, setLoading } = useExpenseStore()
   const [sheetOpen, setSheetOpen] = useState(false)
+  const [editingExpense, setEditingExpense] = useState<Expense | undefined>(undefined)
 
   const fetchExpenses = useCallback(async () => {
     setLoading(true)
@@ -30,6 +31,16 @@ export default function ExpensesPage() {
   const handleDelete = async (id: string) => {
     await fetch(`/api/expenses/${id}`, { method: 'DELETE' })
     removeExpense(id)
+  }
+
+  const handleEdit = (expense: Expense) => {
+    setEditingExpense(expense)
+    setSheetOpen(true)
+  }
+
+  const handleSheetClose = () => {
+    setSheetOpen(false)
+    setEditingExpense(undefined)
   }
 
   const totalStr = `₹${(expenses.reduce((s, e) => s + e.amount, 0) / 100).toLocaleString('en-IN')}`
@@ -94,15 +105,17 @@ export default function ExpensesPage() {
       ) : (
         <div className="space-y-2">
           {expenses.map((exp) => (
-            <ExpenseCard key={exp._id} expense={exp} onDelete={handleDelete} />
+            <ExpenseCard key={exp._id} expense={exp} onDelete={handleDelete} onEdit={handleEdit} />
           ))}
         </div>
       )}
 
       <AddExpenseSheet
         open={sheetOpen}
-        onClose={() => setSheetOpen(false)}
+        onClose={handleSheetClose}
         onAdd={(exp) => { setExpenses([exp, ...expenses]) }}
+        onEdit={(exp) => updateExpense(exp._id, exp)}
+        initialExpense={editingExpense}
       />
     </div>
   )

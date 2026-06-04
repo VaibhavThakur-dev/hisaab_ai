@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useSession } from 'next-auth/react'
-import { TrendingDown, Wallet, ArrowRight } from 'lucide-react'
+import { TrendingDown, Wallet, ArrowRight, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -98,6 +98,18 @@ export default function DashboardPage() {
               </Card>
             </Link>
           )}
+
+          <Link href="/charts">
+            <Card className="rounded-2xl border-border/60">
+              <CardContent className="flex items-center justify-between p-4">
+                <div className="flex items-center gap-3">
+                  <BarChart2 className="w-5 h-5 text-primary" />
+                  <p className="text-sm font-semibold text-foreground">View spending charts</p>
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground" />
+              </CardContent>
+            </Card>
+          </Link>
 
           <div className="space-y-2">
             <div className="flex items-center justify-between">
