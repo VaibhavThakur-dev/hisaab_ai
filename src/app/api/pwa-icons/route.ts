@@ -2,8 +2,6 @@ import { ImageResponse } from 'next/og'
 import React from 'react'
 import { type NextRequest } from 'next/server'
 
-export const runtime = 'edge'
-
 export function GET(req: NextRequest) {
   const size = Number(new URL(req.url).searchParams.get('size') ?? '192')
   const radius = Math.round(size * 0.22)
