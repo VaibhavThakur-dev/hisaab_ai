@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { Sparkles, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -10,13 +10,19 @@ import useAiStore from '@/stores/useAiStore'
 import type { AiTip } from '@/types'
 
 export default function AiTipsPage() {
-  const { aiTip, setAiTip, isGenerating, setGenerating } = useAiStore()
-  const [loading, setLoading] = useState(true)
+  const { aiTip, isLoading, isGenerating, setAiTip, setLoading, setGenerating } = useAiStore()
+
   const month = new Date().toISOString().slice(0, 7)
   const monthLabel = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
 
   useEffect(() => {
-    fetch(`/api/ai/tips`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ month }) })
+    if (aiTip) return
+    setLoading(true)
+    fetch('/api/ai/tips', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ month }),
+    })
       .then((r) => r.json())
       .then((j: { data?: AiTip }) => { if (j.data) setAiTip(j.data) })
       .finally(() => setLoading(false))
@@ -48,7 +54,7 @@ export default function AiTipsPage() {
   }
 
   return (
-    <div className="px-4 pt-6 space-y-5">
+    <div className="px-4 pt-6 pb-24 space-y-5">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-foreground">AI Tips</h1>
@@ -58,14 +64,14 @@ export default function AiTipsPage() {
           size="icon"
           variant="ghost"
           onClick={regenerate}
-          disabled={isGenerating}
+          disabled={isGenerating || isLoading}
           className="rounded-xl"
         >
           <RefreshCw className={`w-4 h-4 ${isGenerating ? 'animate-spin' : ''}`} />
         </Button>
       </div>
 
-      {loading || isGenerating ? (
+      {isLoading || isGenerating ? (
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-20 rounded-2xl" />)}
         </div>
