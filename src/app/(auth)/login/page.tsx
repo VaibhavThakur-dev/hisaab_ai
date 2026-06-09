@@ -14,6 +14,7 @@ function LoginForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const justVerified = searchParams.get('verified') === 'true'
+  const justReset = searchParams.get('reset') === 'true'
 
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -69,6 +70,12 @@ function LoginForm() {
           Email verified! You can now sign in.
         </div>
       )}
+      {justReset && (
+        <div className="flex items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400 text-sm font-medium">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          Password reset! Sign in with your new password.
+        </div>
+      )}
 
       <Card>
         <CardHeader className="pb-4">
@@ -90,7 +97,12 @@ function LoginForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">Password</Label>
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password">Password</Label>
+                <Link href="/forgot-password" className="text-xs text-primary hover:underline">
+                  Forgot password?
+                </Link>
+              </div>
               <div className="relative">
                 <Input
                   id="password"

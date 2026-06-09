@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { TrendingDown, Wallet, ArrowRight, BarChart2 } from 'lucide-react'
 import Link from 'next/link'
@@ -9,45 +9,38 @@ import { Skeleton } from '@/components/ui/skeleton'
 import BudgetRing from '@/components/budget-ring'
 import ExpenseCard from '@/components/expense-card'
 import CategoryBadge from '@/components/category-badge'
-import type { Expense, Category } from '@/types'
-
-interface DashboardData {
-  totalSpent: number
-  totalBudget: number
-  remaining: number
-  topCategory: { name: string; amount: number } | null
-  recentExpenses: Expense[]
-  month: string
-}
+import useDashboardStore, { type DashboardData } from '@/stores/useDashboardStore'
+import type { Category } from '@/types'
 
 export default function DashboardPage() {
   const { data: session } = useSession()
-  const [data, setData] = useState<DashboardData | null>(null)
-  const [loading, setLoading] = useState(true)
+  const { data, isLoading, setData, setLoading } = useDashboardStore()
 
   const month = new Date().toISOString().slice(0, 7)
   const monthLabel = new Date().toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
 
   useEffect(() => {
+    setLoading(true)
     fetch(`/api/dashboard?month=${month}`)
       .then((r) => r.json())
       .then((j: { data: DashboardData }) => setData(j.data))
       .finally(() => setLoading(false))
-  }, [month])
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const firstName = session?.user?.name?.split(' ')[0] ?? 'there'
   const hour = new Date().getHours()
   const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening'
 
   return (
-    <div className="px-4 pt-6 space-y-5">
+    <div className="px-4 pt-6 pb-24 space-y-5">
       <div>
         <p className="text-sm text-muted-foreground">{greeting},</p>
         <h1 className="text-2xl font-bold text-foreground">{firstName} 👋</h1>
         <p className="text-xs text-muted-foreground mt-0.5">{monthLabel}</p>
       </div>
 
-      {loading ? (
+      {isLoading ? (
         <div className="space-y-3">
           <Skeleton className="h-32 rounded-2xl" />
           <Skeleton className="h-24 rounded-2xl" />
